@@ -4,13 +4,18 @@ styleTag.innerHTML += `.board { counter-reset: cnter; } .board > .tile::before {
 document.body.appendChild(styleTag);
 */
 
-const puzzle   = "PUMLBEAMLFIYIHXATNNLE",
-      solution = "PLUMBLNEAXIALNFITHYME";
-var currentSolution = solution;
+String.prototype.replaceAt = function(index, replacement) {
+	return this.substring(0, index) + replacement + this.substring(index + replacement.length);
+}
+
+const puzzle   = "BEADHESTCLUAXTLUHCCRH",
+      solution = "BEECHRXUADULTSLCHATCH";
+var currentPuzzleState = puzzle;
 
 var notInPlace = puzzle.split("").map((el, index) => index).filter(index => puzzle[index] != solution[index]);
-var used = [],
+var used = [], ln = [], crtAns = [],
     currentStack = [], currentQueue = [],
+    numMoves = 0,
     emStop = false;
 
 console.log(notInPlace.map(el => el + " " + puzzle[el] + " " + solution[el]).join("\n"));
@@ -36,38 +41,82 @@ function findChainDFS(index) {
 	}
 }
 
-function findChainBFS() {
+function findChainBFS(startIndex) {
 	var secondTime = false;
 	while(currentQueue.length > 0) {
 		var index = currentQueue.shift();
-		console.log(index + "!");
-		if(index == notInPlace[0]) {
+		if(index == notInPlace[startIndex]) {
 			if(!secondTime) secondTime = true;
-			else return;
+			else {
+				var ind = used[index];
+				var cnt = 1;
+				crtAns = [index];
+				while(ind != notInPlace[startIndex]) {
+					cnt++;
+					crtAns.push(ind);
+					ind = used[ind];
+				}
+				ln[startIndex] = cnt;
+				return;
+			}
 		}
 		for(let i = 0; i < notInPlace.length; i++) {
 			let nextIndex = notInPlace[i];
 			if(puzzle[index] == solution[nextIndex]) {
-				if(used[i] !== 0 && i != 0) continue;
-				used[i] = 1;
+				if(used[nextIndex] !== 0) continue;
+				used[nextIndex] = index;
 				currentQueue.push(nextIndex);
 			}
 		}
 	}
 }
 
-var allowed = 1;
-while(notInPlace.length > 0 && allowed > 0) {
-	used = notInPlace.map(el => 0);
-	used[0] = 1;
-	currentQueue = [notInPlace[0]];
-	emStop = false;
-	findChainBFS();
+document.body.innerHTML += displayPuzzle(currentPuzzleState, solution);
 
-	var sol = notInPlace.filter((el, index) => used[index] != 0).map(el => el + 1);
-	notInPlace = notInPlace.filter((el, index) => used[index] == 0);
-	console.log(sol, notInPlace);
+var allowed = 50;
+while(notInPlace.length > 0 && allowed > 0) {
+	ln = puzzle.split("").map(el => 0);
+	for(let i = 0; i < notInPlace.length; i++) {
+		used = puzzle.split("").map(el => 0);
+		used[i] = "!";
+		currentQueue = [notInPlace[i]];
+		findChainBFS(i);
+	}
+	//console.log(ln);
+	var selectedCurrent = ln.indexOf(ln.filter(el => !!el).sort((a, b) => a - b)[0]);
+
+	used = puzzle.split("").map(el => 0);
+	used[selectedCurrent] = "!";
+	currentQueue = [notInPlace[selectedCurrent]];
+	findChainBFS(selectedCurrent);
+
+	//console.log(crtAns);
+
+	// var sol = notInPlace.filter((el, index) => used[index] != 0).map(el => el + 1);
+	notInPlace = notInPlace.filter(el => crtAns.indexOf(el) == -1);
+	numMoves += crtAns.length - 1;
+	crtAns.forEach(el => currentPuzzleState = currentPuzzleState.replaceAt(el, solution[el]));
+
+	console.log(crtAns.map(el => el + 1), notInPlace);
+	document.body.innerHTML += displayPuzzle(currentPuzzleState, solution);
 	allowed--;
+}
+console.log((15 - numMoves) + "-star solution found - solved in " + numMoves + " moves!");
+
+function displayPuzzle(puzzle, solution = "?????????????????????") {
+	let toret = `<div class='puzzle'>`;
+	for(let i = 0, index = 0; i < 5; i++) {
+		for(let j = 0; j < 5; j++) {
+			if(i % 2 == 1 && j % 2 == 1) {
+				toret += `<div class='empty-slot'></div>`;
+			} else {
+				toret += `<div class='slot ` + (puzzle[index] == solution[index] ? `correct` : `wrong`) + `'>` + puzzle[index] + `</div>`;
+				index++;
+			}
+		}
+	}
+	toret += `</div>`;
+	return toret;
 }
 
 // var allowed = 50;

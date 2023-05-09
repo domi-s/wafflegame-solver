@@ -1,0 +1,25 @@
+* {
+	font-family: Arial;
+}
+
+.puzzle {
+	display: grid;
+	grid-template-columns: repeat(5, 2em);
+	grid-template-rows: repeat(5, 2em);
+	grid-gap: .25em;
+	margin: 1em;
+}
+
+.puzzle > .slot {
+	background: #edeff1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: .25em;
+	border-bottom: .1875em solid rgba(0,0,0,.1);
+}
+
+.puzzle > .slot.correct {
+	background: #6fb05c;
+	color: #fff;
+}
